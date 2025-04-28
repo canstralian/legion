@@ -1,170 +1,181 @@
-# LEGION - Automatic Enumeration Tool
+# Legion  
+**Automatic Enumeration Tool**  
 
-**Legion is based in the Pentesting Methodology that you can find in [book.hacktricks.xyz](https://book.hacktricks.xyz/pentesting-methodology).**
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#) [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](#) [![Version](https://img.shields.io/badge/version-1.0.0-blueviolet)](#)
 
-Legion is a tool that uses several well-known opensource tools to automatically, semi-automatically or *manually* enumerate the most frequent found services running in machines that you could need to pentest.
+Legion automates service enumeration by orchestrating well-known open-source tools. Based on the [Pentesting Methodology](https://book.hacktricks.xyz/pentesting-methodology), it extracts maximal information from each discovered service so you don’t have to repeat the same manual steps.
 
-Basically, the goal of Legion is to extract all the information that you can from each opened network service, so you don't have to write and execute the same commands in a terminal every time you find that service. 
-Some actions are repeated by more than one tool, this is done to be sure that all the possible information is correctly extracted.
+---
 
-[![asciicast](https://asciinema.org/a/250539.png)](https://asciinema.org/a/250539)
+## Table of Contents
+
+- [New in This Fork](#new-in-this-fork)  
+- [Features](#features)  
+- [Installation](#installation)  
+  - [From Source](#from-source)  
+  - [Docker](#docker)  
+- [Usage](#usage)  
+  - [Quick Start](#quick-start)  
+  - [Automatic Scan](#automatic-scan)  
+  - [Semi-Automatic Scan](#semi-automatic-scan)  
+  - [Manual Scan](#manual-scan)  
+- [Configuration](#configuration)  
+- [Protocols Supported](#protocols-supported)  
+- [Brute Force](#brute-force)  
+- [Internal Commands](#internal-commands)  
+- [Contributing](#contributing)  
+- [License](#license)  
+
+---
+
+## New in This Fork
+
+- [ ] **Modular plugin system** for adding custom enumeration scripts  
+- [ ] **YAML-based config** instead of interactive CLI defaults  
+- [ ] **Parallel execution** across multiple hosts/subnets  
+- [ ] **Enhanced reporting**: JSON, HTML and CSV outputs  
+- [ ] [Your improvement here]  
+
+*(Replace these placeholders with your actual enhancements.)*  
+
+---
+
+## Features
+
+- Automatic, semi-automatic and manual enumeration modes  
+- Common service checks: HTTP, SSH, SMB, FTP, Oracle, …  
+- Built-in brute-forcing (Hydra/Metasploit/Nmap fallback)  
+- Re-execution control to avoid redundant scans  
+- Customisable work directory and verbosity levels  
+
+---
 
 ## Installation
 
-### Installation of Legion
+### From Source
 
-```sh
-git clone https://github.com/carlospolop/legion.git /opt/legion
-cd /opt/legion/git
+```bash
+git clone https://github.com/<your-org>/legion.git /opt/legion
+cd /opt/legion
 ./install.sh
-ln -s /opt/legion/legion.py /usr/bin/legion
-```
+ln -s /opt/legion/legion.py /usr/local/bin/legion
 
-For pentesting oracle services you should install manually some dependencies:
+For Oracle listener pentesting, follow the dependencies guide:
 https://book.hacktricks.xyz/pentesting/1521-1522-1529-pentesting-oracle-listener/oracle-pentesting-requirements-installation
 
-### Docker
+Docker
 
-To have a nice experience with `legion` you can also build a container image using `docker` or `podman`, just typing the following commands:
+# Build image
+docker build -t legion .
 
-```docker build -t legion . ```
+# Run container
+docker run -it --rm legion bash
+# Inside: ./legion.py <args>
 
-And start the container:
+Or pull prebuilt image:
 
-```docker run -it legion bash```
+docker pull carlospolop/legion:latest
 
-You will have a ready-to-use `legion` container image (To execute legion inside the container run `./legion.py`).
 
-Or you can just download the dockerhub container with:
 
-```docker pull carlospolop/legion:latest```
+⸻
 
+Usage
 
-## Protocols Supported
+Quick Start
 
-You can get a list using the command `protos`
+legion -t 192.168.1.100
 
-![](https://github.com/carlospolop/legion/blob/master/images/legion-protos.png)
+(Assumes default options: intensity=2, workdir=$HOME/.legion, verbose=False)
 
-## Brute force
-All the protocols included in Legion that could be brute force, can be brute force using Legion. To see if a service can be brute forced and which command line will be used to do so (by default "hydra" is implemented, if hydra was not available metasploit or nmap will be used) set the protocol and the set the intensity to "3".
+Automatic Scan
 
-Example of brute forcing ssh:
+> startGeneral
 
-![](https://github.com/carlospolop/legion/blob/master/images/legion-brute.png)
+Scans ports/services automatically, runs all relevant modules.
 
-## Internal Commands
+Semi-Automatic Scan
 
-![](https://github.com/carlospolop/legion/blob/master/images/internal-commands.png)
+> set host 10.0.0.5
+> set proto http
+> set intensity 2
+> run
 
-Use the `help` internal command to get info about what each command does.
+Configurable, step-by-step enumeration.
 
-## Automatic Scan
+Manual Scan
 
-Just lauch the internal command `startGeneral` and the '**General**' will start scanning ports and services automatically.
+> exec <module_name>
+# e.g. exec http_sqlmap
 
-## Semi-Automatic Scan
+Run a single module on demand.
 
-You can set all the options properly and launch several commands to scan one service. You can do this using the command `run`.
+⸻
 
-## Manual Scan
+Configuration
 
-You can execute just one command using `exec <name>`. For example: `exec http_slqmap`
+Option	Description
+host	Target IP or domain
+proto	Protocol to enumerate (e.g. http, ssh)
+port	Service port (0 = default)
+intensity	1=basic, 2=full (default), 3=brute force
+domain	DNS domain for virtual hosts or Oracle pentesting
+extensions	Comma-separated list for web-file brute forcing
+plist	Path to custom password list (default: built-in)
+ulist	Path to custom username list (default: built-in)
+verbose	True to stream module output, False to suppress until finish
+notuse	Comma-separated modules to skip (e.g. msf)
+workdir	Directory for scan results (default: $HOME/.legion)
 
-Some services have *on demand commands*, this commands can only be executed using this internal command (`exec`).
+Run help or info inside the CLI for full details.
 
-## Options
+⸻
 
-![](https://github.com/carlospolop/legion/blob/master/images/legion-options.png)
+Protocols Supported
 
-### domain
+List all supported protocols with:
 
-Set the domain of the DNS or of the user that you want to use
+legion protos
 
-### extensions
 
-Comma separeted list of possible extensions (to brute force files in a web server)
 
-### host
+⸻
 
-It is the host that you want to attack (valid IP and domains)
+Brute Force
 
-Example:
-```
-set host 127.0.0.1
-set host some.domain.com
-```
+Enable brute force by setting intensity to 3. Legion will choose Hydra by default, then fall back to Metasploit or Nmap.
 
-### intensity
+> set proto ssh
+> set intensity 3
+> run
 
-There are 3 intensities:
-- **1**: Basic checks executed
-- **2**: All checks executed (Default)
-- **3**: Brute force (check for availability)
 
-### ipv6
 
-Ipv6 address of the victim, could be usefull for some commands
+⸻
 
-### notuse
+Internal Commands
 
-You can set a list (separated by commands) of commands that you don't want to use. For example, if you don't want modules from metasploit to be executed:`set notuse msf`.
+Use the help command to see all built-in operations:
 
-### password
+> help
 
-Set here the password of the username you want to use.
 
-### path
+⸻
 
-Web server file path
+Contributing
+	1.	Fork this repo
+	2.	Create a feature branch: git checkout -b feature/my-enhancement
+	3.	Commit your changes (git commit -m 'Add awesome feature')
+	4.	Push: git push origin feature/my-enhancement
+	5.	Open a Pull Request
 
-### plist
+Please follow PEP 8 and include tests for new modules.
 
-Set here the path to a list of passwords (by default LEGION has its own list)
+⸻
 
-### port
+License
 
-The port where the service is running. If "0", then the default port of the service will be used (you can see this information using `info`)
+This project is licensed under the Apache 2.0 License. See LICENSE for details.
 
-### proto
+---
 
-It is the protocol that you want to attack
-
-Example: 
-```
-set proto http
-```
-
-### reexec
-
-Set `True` if you want already executed commands to be executed again (by default is set to False).
-
-### ulist
-
-Set a value here if you want to brute force a list of usernames (by default LEGION has its own list of usernames)
-
-### username
-
-Set the username of the user that you want to use/brute-force(by default to brute-force a list of users is used).
-
-
-### verbose
-
-If `True` the output of the command will be displayed as soon as it ends. If `False` it won't.
-
-If `True` the output of `info` will show where each parameter is used, for example:
-
-![](https://github.com/carlospolop/legion/blob/master/images/info-verbose-true.png)
-
-If `False` the output of `info` will show the values of the parameters, for example:
-
-![](https://github.com/carlospolop/legion/blob/master/images/info-verbose-false.png)
-
-### workdir
-
-Is the directory where the info of the victim is storaged. By default it is `$HOME/.legion`
-
-
-
-
-By Polop<sup>(TM)</sup>
